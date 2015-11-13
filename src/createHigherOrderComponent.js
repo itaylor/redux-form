@@ -24,7 +24,7 @@ const createHigherOrderComponent = (config,
                                     mapStateToProps,
                                     mapDispatchToProps) => {
   const {Component, PropTypes} = React;
-  return (reduxMountPoint, formName, formKey) => {
+  return (reduxMountPoint, formName, formKey, getFormState) => {
     class ReduxForm extends Component {
       static displayName = `ReduxForm(${getDisplayName(WrappedComponent)})`;
       static propTypes = {
@@ -178,28 +178,28 @@ const createHigherOrderComponent = (config,
       })
     };
 
+    function readFormState(state) {
+      if (getFormState) {
+        return getFormState(state);
+      }
+      if (!state[reduxMountPoint]) {
+        throw new Error(`You need to mount the redux-form reducer at "${reduxMountPoint}"`);
+      }
+      if (formKey !== undefined && formKey !== null) {
+        return state[reduxMountPoint] &&
+                state[reduxMountPoint][formName] &&
+                state[reduxMountPoint][formName][formKey];
+      }
+      return state[reduxMountPoint] && state[reduxMountPoint][formName];
+    }
     // make redux connector with or without form key
-    const decorate = formKey !== undefined && formKey !== null ?
-      connect(
-        wrapMapStateToProps(mapStateToProps, state => {
-          if (!state[reduxMountPoint]) {
-            throw new Error(`You need to mount the redux-form reducer at "${reduxMountPoint}"`);
-          }
-          return state[reduxMountPoint] &&
-            state[reduxMountPoint][formName] &&
-            state[reduxMountPoint][formName][formKey];
-        }),
-        wrapMapDispatchToProps(mapDispatchToProps, bindActionData(unboundActions, {form: formName, key: formKey}))
-      ) :
-      connect(
-        wrapMapStateToProps(mapStateToProps, state => {
-          if (!state[reduxMountPoint]) {
-            throw new Error(`You need to mount the redux-form reducer at "${reduxMountPoint}"`);
-          }
-          return state[reduxMountPoint] && state[reduxMountPoint][formName];
-        }),
-        wrapMapDispatchToProps(mapDispatchToProps, bindActionData(unboundActions, {form: formName}))
-      );
+    const decorate = connect(
+      wrapMapStateToProps(mapStateToProps, readFormState),
+      wrapMapDispatchToProps(mapDispatchToProps,
+        bindActionData(unboundActions,
+        formKey ? {form: formName, key: formKey} : {form: formName})
+      )
+    );
 
     return decorate(ReduxForm);
   };

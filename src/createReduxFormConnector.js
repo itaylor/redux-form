@@ -19,7 +19,8 @@ const createReduxFormConnector =
           form: PropTypes.string.isRequired,
           formKey: PropTypes.string,
           touchOnBlur: PropTypes.bool,
-          touchOnChange: PropTypes.bool
+          touchOnChange: PropTypes.bool,
+          getFormState: PropTypes.func
         }
 
         static defaultProps = {
@@ -34,7 +35,8 @@ const createReduxFormConnector =
                 // props that effect how redux-form connects to the redux store
                 'reduxMountPoint',
                 'form',
-                'formKey'
+                'formKey',
+                'getFormState'
               ],
               fn: createHigherOrderComponent(props, isReactNative, React, WrappedComponent,
                 mapStateToProps, mapDispatchToProps)
